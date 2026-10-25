@@ -50,7 +50,6 @@ if "%1"=="admin" (
     exit
 )
 
-
 :: MENU ================================
 setlocal EnableDelayedExpansion
 title ZAPRET SERVICE MANAGER v!LOCAL_VERSION!
@@ -71,30 +70,31 @@ echo.  !CurrentStrategy!
 echo   ----------------------------------------
 echo.
 echo   :: SERVICE
-echo      1. Install Service
-echo      2. Remove Services
-echo      3. Check Status
+echo      1.  Install Service
+echo      2.  Remove Services
+echo      3.  Check Status
 echo.
 echo   :: SETTINGS
-echo      4. Game Filter         [!GameFilterStatus!]
-echo      5. IPSet Filter        [!IPsetStatus!]
-echo      6. Auto-Update Check   [!CheckUpdatesStatus!]
-echo      7. Replace active fakes
+echo      4.  Game Filter         [!GameFilterStatus!]
+echo      5.  IPSet Filter        [!IPsetStatus!]
+echo      6.  Auto-Update Check   [!CheckUpdatesStatus!]
+echo      7.  Replace active fakes
 echo.
 echo   :: UPDATES
-echo      8. Update IPSet List
-echo      9. Update Hosts File
-echo      10. Check for Updates
+echo      8.  Manual update Lists
+echo      9.  Update IPSet List
+echo      10. Update Hosts File
+echo      11. Check for Updates
 echo.
 echo   :: TOOLS
-echo      11. Run Diagnostics
-echo      12. Run Tests
+echo      12. Run Diagnostics
+echo      13. Run Tests
 echo.
 echo   ----------------------------------------
-echo      0. Exit
+echo      0.  Exit
 echo.
 
-set /p menu_choice=   Select option (0-12): 
+set /p menu_choice=   Select option (0-13): 
 
 if "%menu_choice%"=="1" goto service_install
 if "%menu_choice%"=="2" goto service_remove
@@ -103,11 +103,12 @@ if "%menu_choice%"=="4" goto game_switch
 if "%menu_choice%"=="5" goto ipset_switch
 if "%menu_choice%"=="6" goto check_updates_switch
 if "%menu_choice%"=="7" goto replace_active_fakes
-if "%menu_choice%"=="8" goto ipset_update
-if "%menu_choice%"=="9" goto hosts_update
-if "%menu_choice%"=="10" goto service_check_updates
-if "%menu_choice%"=="11" goto service_diagnostics
-if "%menu_choice%"=="12" goto run_tests
+if "%menu_choice%"=="8" goto open_lists
+if "%menu_choice%"=="9" goto ipset_update
+if "%menu_choice%"=="10" goto hosts_update
+if "%menu_choice%"=="11" goto service_check_updates
+if "%menu_choice%"=="12" goto service_diagnostics
+if "%menu_choice%"=="13" goto run_tests
 if "%menu_choice%"=="0" exit /b
 goto menu
 
@@ -1309,3 +1310,39 @@ if "%extracted%"=="0" (
     exit
 )
 exit /b 0
+
+:open_lists
+
+chcp 437 > nul
+cls
+
+cd /d "%~dp0"
+set "LISTS_PATH=%~dp0lists\"
+
+echo Pick one of the options:
+set "count=0"
+for /f "delims=" %%F in ('powershell -NoProfile -Command "Get-ChildItem -LiteralPath '.\lists' -Filter '*.txt' | Sort-Object { [Regex]::Replace($_.Name, '(\d+)', { $args[0].Value.PadLeft(8, '0') }) } | ForEach-Object { $_.Name }"') do (
+    set /a count+=1
+    echo   !count!. %%F
+    set "file!count!=%%F"
+)
+set /p choice=   Select option (0-%count%):
+
+if "!choice!"=="" (
+    set "choice=0"
+)
+
+if "!choice!"=="0" (
+    goto menu
+)
+
+set "selectedList=!file%choice%!"
+if not defined selectedList (
+    echo Invalid choice, exiting...
+    pause
+    goto menu
+)
+
+start "" notepad "%LISTS_PATH%!selectedList!"
+
+goto menu
